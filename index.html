@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Passport Photo Border Tool - VACANCYHAI.ONLINE</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+        :root {
+            --white: #ffffff;
+            --light-gray: #f0f0f0;
+            --medium-gray: #e0e0e0;
+            --dark-gray: #333333;
+            --accent-blue: #007aff; /* macOS-like blue */
+            --border-radius: 8px;
+            --shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--light-gray);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: var(--dark-gray);
+        }
+
+        .container {
+            background-color: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 30px;
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        h1 {
+            font-size: 1.8em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--dark-gray);
+        }
+
+        .upload-area {
+            border: 2px dashed var(--medium-gray);
+            border-radius: var(--border-radius);
+            padding: 40px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .upload-area:hover {
+            border-color: var(--accent-blue);
+            background-color: #f9f9f9;
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            color: var(--medium-gray);
+        }
+
+        .upload-text {
+            font-size: 1.1em;
+            color: var(--dark-gray);
+            font-weight: 500;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .preview-area {
+            margin-top: 20px;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .preview-area img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid var(--medium-gray);
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .download-btn {
+            background-color: var(--accent-blue);
+            color: var(--white);
+            border: none;
+            border-radius: var(--border-radius);
+            padding: 12px 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-weight: 500;
+        }
+
+        .download-btn:hover {
+            background-color: #005bb5; /* Darker blue */
+        }
+
+        .filename-display {
+            font-size: 0.9em;
+            color: var(--dark-gray);
+            word-break: break-all;
+            margin-top: -10px; /* Adjust spacing */
+        }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 0.85em;
+            color: var(--dark-gray);
+        }
+
+        .footer a {
+            color: var(--accent-blue);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            color: #d9534f; /* Bootstrap's danger red */
+            margin-top: 10px;
+            font-size: 0.9em;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Passport Photo Border Tool</h1>
+
+        <div class="upload-area" id="uploadArea">
+            <span class="upload-icon">⬆️</span>
+            <span class="upload-text">Drag & Drop your photo here, or click to select</span>
+            <input type="file" id="photoUpload" accept="image/*">
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="preview-area" id="previewArea">
+            <h2>Preview</h2>
+            <img id="photoPreview" src="#" alt="Photo Preview">
+            <span class="filename-display" id="generatedFilename"></span>
+            <button class="download-btn" id="downloadBtn">Download Photo</button>
+        </div>
+
+        <div class="footer">
+            Developed by <a href="https://vacancyhai.online" target="_blank">VACANCYHAI.ONLINE</a> | Inspired by USERS
+        </div>
+    </div>
+
+    <script>
+        const photoUpload = document.getElementById('photoUpload');
+        const uploadArea = document.getElementById('uploadArea');
+        const photoPreview = document.getElementById('photoPreview');
+        const previewArea = document.getElementById('previewArea');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const generatedFilenameDisplay = document.getElementById('generatedFilename');
+        const errorMessage = document.getElementById('errorMessage');
+
+        let originalFileName = '';
+
+        // Handle drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--accent-blue)';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = 'var(--medium-gray)';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--medium-gray)';
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        // Handle click to select file
+        uploadArea.addEventListener('click', () => {
+            photoUpload.click();
+        });
+
+        photoUpload.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            handleFile(file);
+        });
+
+        function handleFile(file) {
+            errorMessage.style.display = 'none'; // Hide any previous errors
+            if (!file) {
+                return;
+            }
+
+            if (!file.type.startsWith('image/')) {
+                errorMessage.textContent = 'Please upload an image file (e.g., JPG, PNG).';
+                errorMessage.style.display = 'block';
+                previewArea.style.display = 'none';
+                return;
+            }
+
+            originalFileName = file.name.split('.').slice(0, -1).join('.'); // Get name without extension
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const borderWidth = 10; // 10px white border
+
+                    // Calculate new dimensions with border
+                    canvas.width = img.width + (2 * borderWidth);
+                    canvas.height = img.height + (2 * borderWidth);
+
+                    // Draw white background for the border
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    // Draw the image onto the canvas with offset for the border
+                    ctx.drawImage(img, borderWidth, borderWidth, img.width, img.height);
+
+                    // Display preview
+                    photoPreview.src = canvas.toDataURL('image/png'); // Use PNG for better quality with border
+                    previewArea.style.display = 'flex';
+                    uploadArea.style.display = 'none'; // Hide upload area after selection
+
+                    // Generate and display filename
+                    const generatedName = `${originalFileName}-VACANCYHAI-ONLINE.png`;
+                    generatedFilenameDisplay.textContent = `File will be downloaded as: ${generatedName}`;
+
+                    // Set up download button
+                    downloadBtn.onclick = () => {
+                        const link = document.createElement('a');
+                        link.download = generatedName;
+                        link.href = canvas.toDataURL('image/png');
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    };
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    </script>
+</body>
+</html>
