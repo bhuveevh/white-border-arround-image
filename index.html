@@ -261,7 +261,7 @@
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
-                    const borderWidth = 10; // 10px white border
+                    const borderWidth = 30; // Changed from 10 to 30 for 3x border
 
                     // Calculate new dimensions with border
                     canvas.width = img.width + (2 * borderWidth);
@@ -288,11 +288,6 @@
                     // Show download message to user
                     generatedFilenameDisplay.textContent = `File downloaded as: ${generatedName}`;
                     downloadMessage.style.display = 'block';
-
-                    // Optional: You might want to scroll to the download message on mobile for better visibility
-                    // if (window.innerWidth <= 600) {
-                    //     downloadMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    // }
                 };
                 img.src = e.target.result;
             };
