@@ -166,7 +166,8 @@
 
         <div class="upload-area" id="uploadArea">
             <span class="upload-icon">⬆️</span>
-            <span class="upload-text"></span> <input type="file" id="photoUpload" accept="image/*">
+            <span class="upload-text"></span> 
+            <input type="file" id="photoUpload" accept="image/jpeg,image/png,image/webp">
         </div>
 
         <div class="error-message" id="errorMessage"></div>
@@ -244,8 +245,10 @@
                 return;
             }
 
-            if (!file.type.startsWith('image/')) {
-                errorMessage.textContent = 'Please upload an image file (e.g., JPG, PNG).';
+            // Check if the file type is supported (JPG, JPEG, PNG, WEBP)
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                errorMessage.textContent = 'Please upload a JPG, JPEG, PNG, or WEBP image file.';
                 errorMessage.style.display = 'block';
                 return;
             }
@@ -279,13 +282,13 @@
                     // Draw the image onto the canvas with offset for both borders
                     ctx.drawImage(img, blackBorderWidth + whiteBorderWidth, blackBorderWidth + whiteBorderWidth, img.width, img.height);
 
-                    // Generate filename
-                    const generatedName = `${originalFileName}-VACANCYHAI-ONLINE.png`;
+                    // Generate filename (always .jpg)
+                    const generatedName = `${originalFileName}-VACANCYHAI-ONLINE.jpg`;
 
-                    // Trigger download directly
+                    // Trigger download directly (always download as image/jpeg)
                     const link = document.createElement('a');
                     link.download = generatedName;
-                    link.href = canvas.toDataURL('image/png');
+                    link.href = canvas.toDataURL('image/jpeg', 0.9); // 0.9 is quality (0.0 to 1.0)
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
