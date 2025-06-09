@@ -261,18 +261,23 @@
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
-                    const borderWidth = 30; // Changed from 10 to 30 for 3x border
+                    const whiteBorderWidth = 30; // 30px white border
+                    const blackBorderWidth = 4;   // 4px black outer border
 
-                    // Calculate new dimensions with border
-                    canvas.width = img.width + (2 * borderWidth);
-                    canvas.height = img.height + (2 * borderWidth);
+                    // Calculate new dimensions with both borders
+                    canvas.width = img.width + (2 * whiteBorderWidth) + (2 * blackBorderWidth);
+                    canvas.height = img.height + (2 * whiteBorderWidth) + (2 * blackBorderWidth);
 
-                    // Draw white background for the border
-                    ctx.fillStyle = 'white';
+                    // Draw black background for the outer border
+                    ctx.fillStyle = 'black';
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                    // Draw the image onto the canvas with offset for the border
-                    ctx.drawImage(img, borderWidth, borderWidth, img.width, img.height);
+                    // Draw white background for the inner border
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(blackBorderWidth, blackBorderWidth, canvas.width - (2 * blackBorderWidth), canvas.height - (2 * blackBorderWidth));
+
+                    // Draw the image onto the canvas with offset for both borders
+                    ctx.drawImage(img, blackBorderWidth + whiteBorderWidth, blackBorderWidth + whiteBorderWidth, img.width, img.height);
 
                     // Generate filename
                     const generatedName = `${originalFileName}-VACANCYHAI-ONLINE.png`;
