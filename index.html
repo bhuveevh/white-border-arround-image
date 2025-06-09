@@ -27,6 +27,8 @@
             min-height: 100vh;
             margin: 0;
             color: var(--dark-gray);
+            padding: 20px; /* Add padding for smaller screens */
+            box-sizing: border-box; /* Include padding in element's total width and height */
         }
 
         .container {
@@ -35,11 +37,12 @@
             box-shadow: var(--shadow);
             padding: 30px;
             width: 100%;
-            max-width: 500px;
+            max-width: 500px; /* Max width for larger screens */
             text-align: center;
             display: flex;
             flex-direction: column;
             gap: 25px;
+            box-sizing: border-box;
         }
 
         h1 {
@@ -67,6 +70,10 @@
             background-color: #f9f9f9;
         }
 
+        input[type="file"] {
+            display: none;
+        }
+
         .upload-icon {
             font-size: 3em;
             color: var(--medium-gray);
@@ -78,47 +85,18 @@
             font-weight: 500;
         }
 
-        input[type="file"] {
-            display: none;
-        }
-
-        .preview-area {
-            margin-top: 20px;
-            display: none; /* Hidden by default */
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .preview-area img {
-            max-width: 100%;
-            height: auto;
-            border: 1px solid var(--medium-gray);
-            border-radius: var(--border-radius);
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-        }
-
-        .download-btn {
-            background-color: var(--accent-blue);
-            color: var(--white);
-            border: none;
-            border-radius: var(--border-radius);
-            padding: 12px 25px;
+        .download-message {
             font-size: 1.1em;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
+            color: var(--dark-gray);
             font-weight: 500;
-        }
-
-        .download-btn:hover {
-            background-color: #005bb5; /* Darker blue */
+            display: none; /* Hidden by default, shown after processing */
         }
 
         .filename-display {
             font-size: 0.9em;
             color: var(--dark-gray);
             word-break: break-all;
-            margin-top: -10px; /* Adjust spacing */
+            margin-top: 10px; /* Space from message */
         }
 
         .footer {
@@ -143,6 +121,43 @@
             font-size: 0.9em;
             display: none;
         }
+
+        /* --- Mobile Responsiveness --- */
+        @media (max-width: 600px) {
+            body {
+                padding: 15px;
+            }
+
+            .container {
+                padding: 20px;
+                gap: 20px;
+            }
+
+            h1 {
+                font-size: 1.6em;
+            }
+
+            .upload-area {
+                padding: 30px 15px;
+            }
+
+            .upload-icon {
+                font-size: 2.5em;
+            }
+
+            .upload-text {
+                font-size: 1em;
+            }
+
+            .download-message {
+                font-size: 1em;
+            }
+
+            .footer {
+                margin-top: 20px;
+                font-size: 0.8em;
+            }
+        }
     </style>
 </head>
 <body>
@@ -151,17 +166,14 @@
 
         <div class="upload-area" id="uploadArea">
             <span class="upload-icon">⬆️</span>
-            <span class="upload-text">Drag & Drop your photo here, or click to select</span>
-            <input type="file" id="photoUpload" accept="image/*">
+            <span class="upload-text"></span> <input type="file" id="photoUpload" accept="image/*">
         </div>
 
         <div class="error-message" id="errorMessage"></div>
 
-        <div class="preview-area" id="previewArea">
-            <h2>Preview</h2>
-            <img id="photoPreview" src="#" alt="Photo Preview">
+        <div class="download-message" id="downloadMessage">
+            Your photo is ready!
             <span class="filename-display" id="generatedFilename"></span>
-            <button class="download-btn" id="downloadBtn">Download Photo</button>
         </div>
 
         <div class="footer">
@@ -172,15 +184,40 @@
     <script>
         const photoUpload = document.getElementById('photoUpload');
         const uploadArea = document.getElementById('uploadArea');
-        const photoPreview = document.getElementById('photoPreview');
-        const previewArea = document.getElementById('previewArea');
-        const downloadBtn = document.getElementById('downloadBtn');
-        const generatedFilenameDisplay = document.getElementById('generatedFilename');
+        const uploadText = document.querySelector('.upload-text'); // Get the span for dynamic text
         const errorMessage = document.getElementById('errorMessage');
+        const downloadMessage = document.getElementById('downloadMessage');
+        const generatedFilenameDisplay = document.getElementById('generatedFilename');
 
         let originalFileName = '';
 
-        // Handle drag and drop
+        // Function to update upload text based on screen width
+        function updateUploadText() {
+            if (window.innerWidth <= 600) {
+                uploadText.textContent = 'Tap here to select your photo';
+            } else {
+                uploadText.textContent = 'Drag & Drop your photo here, or click to select';
+            }
+        }
+
+        // Initial call to set text on load
+        updateUploadText();
+
+        // Update text on window resize
+        window.addEventListener('resize', updateUploadText);
+
+        // Handle click to select file
+        uploadArea.addEventListener('click', () => {
+            photoUpload.click();
+        });
+
+        // Handle file selection
+        photoUpload.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            handleFile(file);
+        });
+
+        // For drag and drop on desktop
         uploadArea.addEventListener('dragover', (e) => {
             e.preventDefault();
             uploadArea.style.borderColor = 'var(--accent-blue)';
@@ -199,18 +236,10 @@
             }
         });
 
-        // Handle click to select file
-        uploadArea.addEventListener('click', () => {
-            photoUpload.click();
-        });
-
-        photoUpload.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            handleFile(file);
-        });
-
         function handleFile(file) {
             errorMessage.style.display = 'none'; // Hide any previous errors
+            downloadMessage.style.display = 'none'; // Hide previous download message
+
             if (!file) {
                 return;
             }
@@ -218,9 +247,11 @@
             if (!file.type.startsWith('image/')) {
                 errorMessage.textContent = 'Please upload an image file (e.g., JPG, PNG).';
                 errorMessage.style.display = 'block';
-                previewArea.style.display = 'none';
                 return;
             }
+
+            // Reset upload area border (in case of previous drag-over)
+            uploadArea.style.borderColor = 'var(--medium-gray)';
 
             originalFileName = file.name.split('.').slice(0, -1).join('.'); // Get name without extension
             const reader = new FileReader();
@@ -243,24 +274,25 @@
                     // Draw the image onto the canvas with offset for the border
                     ctx.drawImage(img, borderWidth, borderWidth, img.width, img.height);
 
-                    // Display preview
-                    photoPreview.src = canvas.toDataURL('image/png'); // Use PNG for better quality with border
-                    previewArea.style.display = 'flex';
-                    uploadArea.style.display = 'none'; // Hide upload area after selection
-
-                    // Generate and display filename
+                    // Generate filename
                     const generatedName = `${originalFileName}-VACANCYHAI-ONLINE.png`;
-                    generatedFilenameDisplay.textContent = `File will be downloaded as: ${generatedName}`;
 
-                    // Set up download button
-                    downloadBtn.onclick = () => {
-                        const link = document.createElement('a');
-                        link.download = generatedName;
-                        link.href = canvas.toDataURL('image/png');
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                    };
+                    // Trigger download directly
+                    const link = document.createElement('a');
+                    link.download = generatedName;
+                    link.href = canvas.toDataURL('image/png');
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+
+                    // Show download message to user
+                    generatedFilenameDisplay.textContent = `File downloaded as: ${generatedName}`;
+                    downloadMessage.style.display = 'block';
+
+                    // Optional: You might want to scroll to the download message on mobile for better visibility
+                    // if (window.innerWidth <= 600) {
+                    //     downloadMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // }
                 };
                 img.src = e.target.result;
             };
